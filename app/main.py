@@ -105,7 +105,7 @@ async def scan_url(
     if not (url.startswith("http://") or url.startswith("https://")):
         url = "http://" + url
 
-    user_ip = request.client.host or "unknown"
+    user_ip = request.client.host if request.client else "unknown"
 
     prediction, risk_score = predict_url(url)
 
