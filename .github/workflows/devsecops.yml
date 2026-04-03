@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest httpx==0.24.1
 
       - name: Train model
         run: python ml/train_model.py
