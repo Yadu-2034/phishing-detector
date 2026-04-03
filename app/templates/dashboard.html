@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Dashboard - PhishDetect</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+        }
+        header {
+            background: #1a1f2e;
+            border-bottom: 1px solid #2d3748;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.25rem; color: #63b3ed; }
+        nav a {
+            color: #a0aec0;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+        }
+        nav a:hover { color: #63b3ed; }
+        .dashboard { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+        h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .metric-label {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+        .metric-total   { color: #63b3ed; }
+        .metric-phishing { color: #fc8181; }
+        .metric-safe    { color: #68d391; }
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .chart-title {
+            font-size: 0.9rem;
+            color: #a0aec0;
+            margin-bottom: 1rem;
+        }
+        .log-section {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .log-title {
+            font-size: 0.9rem;
+            color: #a0aec0;
+            margin-bottom: 1rem;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            color: #718096;
+            border-bottom: 1px solid #2d3748;
+            font-weight: 500;
+        }
+        td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #1a2035;
+            color: #cbd5e0;
+        }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-phishing {
+            background: rgba(252,129,129,0.15);
+            color: #fc8181;
+        }
+        .badge-safe {
+            background: rgba(104,211,145,0.15);
+            color: #68d391;
+        }
+        .url-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid #4a5568;
+            color: #a0aec0;
+            border-radius: 6px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            float: right;
+        }
+        .refresh-btn:hover { background: #2d3748; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PhishDetect</h1>
+        <nav>
+            <a href="/">Scan</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/docs">API Docs</a>
+        </nav>
+    </header>
+
+    <div class="dashboard">
+        <h2>Security Dashboard</h2>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-label">Total Scans</div>
+                <div class="metric-value metric-total" id="totalScans">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Phishing Detected</div>
+                <div class="metric-value metric-phishing" id="phishingCount">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Safe URLs</div>
+                <div class="metric-value metric-safe" id="safeCount">-</div>
+            </div>
+        </div>
+
+        <div class="charts">
+            <div class="chart-card">
+                <div class="chart-title">Safe vs Phishing</div>
+                <div style="position:relative; height:220px;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Scans Over Last 7 Days</div>
+                <div style="position:relative; height:220px;">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <div class="log-title">
+                Recent Security Logs
+                <button class="refresh-btn" onclick="loadData()">Refresh</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>URL</th>
+                        <th>Result</th>
+                        <th>Risk Score</th>
+                        <th>User IP</th>
+                    </tr>
+                </thead>
+                <tbody id="logsBody">
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#718096;">
+                            Loading...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let pieChart = null;
+        let lineChart = null;
+
+        async function loadData() {
+            try {
+                const statsRes = await fetch('/api/stats');
+                const stats = await statsRes.json();
+
+                document.getElementById('totalScans').textContent = stats.total_scans;
+                document.getElementById('phishingCount').textContent = stats.phishing_count;
+                document.getElementById('safeCount').textContent = stats.safe_count;
+
+                updatePieChart(stats.safe_count, stats.phishing_count);
+                updateLineChart(stats.daily_scans);
+
+                const logsRes = await fetch('/api/logs?limit=20');
+                const logs = await logsRes.json();
+                renderLogs(logs);
+
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+            }
+        }
+
+        function updatePieChart(safe, phishing) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (pieChart) pieChart.destroy();
+            pieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Safe', 'Phishing'],
+                    datasets: [{
+                        data: [safe || 0, phishing || 0],
+                        backgroundColor: ['#48bb78', '#fc8181'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#a0aec0',
+                                font: { size: 12 },
+                                padding: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLineChart(dailyData) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            if (lineChart) lineChart.destroy();
+            const labels = dailyData.map(d => d.date);
+            const counts = dailyData.map(d => d.count);
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['No data yet'],
+                    datasets: [{
+                        label: 'Scans',
+                        data: counts.length > 0 ? counts : [0],
+                        borderColor: '#63b3ed',
+                        backgroundColor: 'rgba(99,179,237,0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#63b3ed'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            ticks: { color: '#718096' },
+                            grid: { color: '#2d3748' }
+                        },
+                        y: {
+                            ticks: { color: '#718096', stepSize: 1 },
+                            grid: { color: '#2d3748' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logsBody');
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#718096;">No scans yet. Scan a URL first!</td></tr>';
+                return;
+            }
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${log.timestamp}</td>
+                    <td class="url-cell" title="${log.url_scanned}">${log.url_scanned}</td>
+                    <td>
+                        <span class="badge ${log.prediction === 'Phishing' ? 'badge-phishing' : 'badge-safe'}">
+                            ${log.prediction}
+                        </span>
+                    </td>
+                    <td>${(log.risk_score * 100).toFixed(1)}%</td>
+                    <td>${log.user_ip}</td>
+                </tr>
+            `).join('');
+        }
+
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

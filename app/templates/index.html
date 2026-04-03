@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: #1a1f2e;
+            border-bottom: 1px solid #2d3748;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.25rem; color: #63b3ed; }
+        nav a {
+            color: #a0aec0;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+        }
+        nav a:hover { color: #63b3ed; }
+        .main {
+            flex: 1;
+            max-width: 720px;
+            margin: 4rem auto;
+            padding: 0 1rem;
+            width: 100%;
+        }
+        .hero-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .hero-subtitle {
+            text-align: center;
+            color: #a0aec0;
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+        }
+        .scan-card {
+            background: #1a1f2e;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        input[type="text"] {
+            flex: 1;
+            background: #0f1117;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #63b3ed; }
+        button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2c5282; }
+        button:disabled { background: #4a5568; cursor: not-allowed; }
+        .api-key-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        .api-key-row label {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            white-space: nowrap;
+        }
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 8px;
+            display: none;
+        }
+        .result-phishing {
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid #fc8181;
+        }
+        .result-safe {
+            background: rgba(72, 187, 120, 0.1);
+            border: 1px solid #68d391;
+        }
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .risk-bar-container {
+            background: #2d3748;
+            border-radius: 999px;
+            height: 8px;
+            margin: 0.75rem 0;
+            overflow: hidden;
+        }
+        .risk-bar {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+        .risk-high { background: #fc8181; }
+        .risk-low  { background: #68d391; }
+        .result-meta {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-top: 0.5rem;
+        }
+        .loading {
+            text-align: center;
+            color: #a0aec0;
+            padding: 1rem;
+            display: none;
+        }
+        .tip {
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: #718096;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PhishDetect</h1>
+        <nav>
+            <a href="/">Scan</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/docs">API Docs</a>
+        </nav>
+    </header>
+
+    <main class="main">
+        <h2 class="hero-title">URL Phishing Detector</h2>
+        <p class="hero-subtitle">ML-powered security analysis with DevSecOps deployment</p>
+
+        <div class="scan-card">
+            <div class="api-key-row">
+                <label>API Key:</label>
+                <input type="text" id="apiKey"
+                       value="phishdetect-api-key-demo-2024">
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="urlInput"
+                       placeholder="Enter URL to scan: https://example.com">
+                <button onclick="scanUrl()" id="scanBtn">Scan URL</button>
+            </div>
+
+            <div class="loading" id="loading">Analyzing URL...</div>
+
+            <div class="result-box" id="resultBox">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="risk-bar-container">
+                    <div class="risk-bar" id="riskBar"></div>
+                </div>
+                <div class="result-meta" id="resultMeta"></div>
+                <div id="resultMessage" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+            </div>
+
+            <p class="tip">
+                Try scanning: http://paypal-secure-login.verify-account.com/update
+            </p>
+        </div>
+    </main>
+
+    <script>
+        async function scanUrl() {
+            const url = document.getElementById('urlInput').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+
+            if (!url) {
+                alert('Please enter a URL to scan.');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('scanBtn').disabled = true;
+
+            try {
+                const response = await fetch('/scan-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Api-Key': apiKey
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert('Error: ' + (err.detail || 'Unknown error'));
+                    return;
+                }
+
+                const data = await response.json();
+                showResult(data);
+
+            } catch (error) {
+                alert('Connection error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('scanBtn').disabled = false;
+            }
+        }
+
+        function showResult(data) {
+            const box = document.getElementById('resultBox');
+            const isPhishing = data.result === 'Phishing';
+
+            box.className = 'result-box ' + (isPhishing ? 'result-phishing' : 'result-safe');
+            box.style.display = 'block';
+
+            document.getElementById('resultTitle').textContent =
+                isPhishing ? 'PHISHING DETECTED' : 'URL IS SAFE';
+
+            const riskPct = Math.round(data.risk_score * 100);
+            const riskBar = document.getElementById('riskBar');
+            riskBar.style.width = riskPct + '%';
+            riskBar.className = 'risk-bar ' + (isPhishing ? 'risk-high' : 'risk-low');
+
+            document.getElementById('resultMeta').textContent =
+                'Risk Score: ' + riskPct + '% | URL: ' + data.url;
+
+            document.getElementById('resultMessage').textContent = data.message;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('urlInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') scanUrl();
+            });
+        });
+    </script>
+</body>
+</html>
