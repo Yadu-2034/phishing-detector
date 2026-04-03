@@ -2,178 +2,434 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Security Dashboard - PhishDetect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Dashboard — PhishDetect</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-input: #0d1424;
+            --accent: #4f9cf9;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e2d45;
+        }
+
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #0f1117;
-            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
         }
+
         header {
-            background: #1a1f2e;
-            border-bottom: 1px solid #2d3748;
-            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        header h1 { font-size: 1.25rem; color: #63b3ed; }
-        nav a {
-            color: #a0aec0;
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             text-decoration: none;
-            margin-left: 1.5rem;
-            font-size: 0.9rem;
         }
-        nav a:hover { color: #63b3ed; }
-        .dashboard { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
-        h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f9cf9, #7c3aed);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .logo-text span { color: var(--accent); }
+
+        nav { display: flex; gap: 0.25rem; }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        nav a:hover { color: var(--text-primary); background: var(--bg-card); }
+        nav a.active { color: var(--accent); background: rgba(79,156,249,0.1); }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
         .metrics {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
+
         .metric-card {
-            background: #1a1f2e;
-            border: 1px solid #2d3748;
-            border-radius: 10px;
-            padding: 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: border-color 0.2s;
         }
+
+        .metric-card:hover { border-color: var(--border-hover, #2d4a6e); }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .icon-total { background: rgba(79,156,249,0.15); }
+        .icon-phishing { background: rgba(239,68,68,0.15); }
+        .icon-safe { background: rgba(34,197,94,0.15); }
+
+        .metric-info { flex: 1; }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .val-total { color: var(--accent); }
+        .val-phishing { color: var(--danger); }
+        .val-safe { color: var(--success); }
+
         .metric-label {
             font-size: 0.8rem;
-            color: #a0aec0;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        .metric-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
-        .metric-total   { color: #63b3ed; }
-        .metric-phishing { color: #fc8181; }
-        .metric-safe    { color: #68d391; }
+
         .charts {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
+
         .chart-card {
-            background: #1a1f2e;
-            border: 1px solid #2d3748;
-            border-radius: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             padding: 1.25rem;
         }
-        .chart-title {
-            font-size: 0.9rem;
-            color: #a0aec0;
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 1rem;
         }
-        .log-section {
-            background: #1a1f2e;
-            border: 1px solid #2d3748;
-            border-radius: 10px;
-            padding: 1.25rem;
-        }
-        .log-title {
+
+        .card-title {
             font-size: 0.9rem;
-            color: #a0aec0;
-            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .log-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .log-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 8px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
         th {
             text-align: left;
-            padding: 0.5rem 0.75rem;
-            color: #718096;
-            border-bottom: 1px solid #2d3748;
-            font-weight: 500;
+            padding: 0.65rem 1.25rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.15);
         }
+
         td {
-            padding: 0.6rem 0.75rem;
-            border-bottom: 1px solid #1a2035;
-            color: #cbd5e0;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid rgba(30,45,69,0.5);
+            color: var(--text-secondary);
+            vertical-align: middle;
         }
-        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover td { background: rgba(79,156,249,0.03); }
+
         .badge {
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
             border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 600;
         }
+
         .badge-phishing {
-            background: rgba(252,129,129,0.15);
-            color: #fc8181;
+            background: rgba(239,68,68,0.12);
+            color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.2);
         }
+
         .badge-safe {
-            background: rgba(104,211,145,0.15);
-            color: #68d391;
+            background: rgba(34,197,94,0.12);
+            color: var(--success);
+            border: 1px solid rgba(34,197,94,0.2);
         }
+
         .url-cell {
-            max-width: 250px;
+            max-width: 260px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-        .refresh-btn {
-            background: transparent;
-            border: 1px solid #4a5568;
-            color: #a0aec0;
-            border-radius: 6px;
-            padding: 0.4rem 0.75rem;
+            font-family: 'Courier New', monospace;
             font-size: 0.8rem;
-            cursor: pointer;
-            float: right;
+            color: var(--text-muted);
         }
-        .refresh-btn:hover { background: #2d3748; }
+
+        .risk-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .risk-high { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .risk-medium { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .risk-low { background: rgba(34,197,94,0.1); color: var(--success); }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state div {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>PhishDetect</h1>
+        <a class="logo" href="/">
+            <div class="logo-icon">🛡</div>
+            <span class="logo-text">Phish<span>Detect</span></span>
+        </a>
         <nav>
-            <a href="/">Scan</a>
-            <a href="/dashboard">Dashboard</a>
+            <a href="/">Scanner</a>
+            <a href="/dashboard" class="active">Dashboard</a>
             <a href="/docs">API Docs</a>
         </nav>
     </header>
 
     <div class="dashboard">
-        <h2>Security Dashboard</h2>
+        <div class="page-header">
+            <div>
+                <div class="page-title">Security Dashboard</div>
+                <div class="page-subtitle">Real-time phishing detection monitoring</div>
+            </div>
+            <div class="live-badge">
+                <div class="live-dot"></div>
+                Live Monitoring
+            </div>
+        </div>
 
         <div class="metrics">
             <div class="metric-card">
-                <div class="metric-label">Total Scans</div>
-                <div class="metric-value metric-total" id="totalScans">-</div>
+                <div class="metric-icon icon-total">📊</div>
+                <div class="metric-info">
+                    <div class="metric-value val-total" id="totalScans">—</div>
+                    <div class="metric-label">Total Scans</div>
+                </div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Phishing Detected</div>
-                <div class="metric-value metric-phishing" id="phishingCount">-</div>
+                <div class="metric-icon icon-phishing">⚠️</div>
+                <div class="metric-info">
+                    <div class="metric-value val-phishing" id="phishingCount">—</div>
+                    <div class="metric-label">Phishing Detected</div>
+                </div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Safe URLs</div>
-                <div class="metric-value metric-safe" id="safeCount">-</div>
+                <div class="metric-icon icon-safe">✅</div>
+                <div class="metric-info">
+                    <div class="metric-value val-safe" id="safeCount">—</div>
+                    <div class="metric-label">Safe URLs</div>
+                </div>
             </div>
         </div>
 
         <div class="charts">
             <div class="chart-card">
-                <div class="chart-title">Safe vs Phishing</div>
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Threat Distribution</div>
+                        <div class="card-subtitle">Safe vs Phishing URLs</div>
+                    </div>
+                </div>
                 <div style="position:relative; height:220px;">
                     <canvas id="pieChart"></canvas>
                 </div>
             </div>
             <div class="chart-card">
-                <div class="chart-title">Scans Over Last 7 Days</div>
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Scan Activity</div>
+                        <div class="card-subtitle">Last 7 days</div>
+                    </div>
+                </div>
                 <div style="position:relative; height:220px;">
                     <canvas id="lineChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="log-section">
-            <div class="log-title">
-                Recent Security Logs
-                <button class="refresh-btn" onclick="loadData()">Refresh</button>
+        <div class="log-card">
+            <div class="log-card-header">
+                <div>
+                    <div class="card-title">Security Logs</div>
+                    <div class="card-subtitle">SIEM-style audit trail</div>
+                </div>
+                <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
             </div>
             <table>
                 <thead>
@@ -182,19 +438,26 @@
                         <th>URL</th>
                         <th>Result</th>
                         <th>Risk Score</th>
-                        <th>User IP</th>
+                        <th>IP Address</th>
                     </tr>
                 </thead>
                 <tbody id="logsBody">
                     <tr>
-                        <td colspan="5" style="text-align:center; color:#718096;">
-                            Loading...
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div>📋</div>
+                                Loading logs...
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <footer>
+        PhishDetect — Built with FastAPI · scikit-learn · Docker · GitHub Actions
+    </footer>
 
     <script>
         let pieChart = null;
@@ -230,20 +493,24 @@
                     labels: ['Safe', 'Phishing'],
                     datasets: [{
                         data: [safe || 0, phishing || 0],
-                        backgroundColor: ['#48bb78', '#fc8181'],
-                        borderWidth: 0
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '70%',
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: '#a0aec0',
+                                color: '#94a3b8',
                                 font: { size: 12 },
-                                padding: 16
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyleWidth: 10
                             }
                         }
                     }
@@ -254,21 +521,21 @@
         function updateLineChart(dailyData) {
             const ctx = document.getElementById('lineChart').getContext('2d');
             if (lineChart) lineChart.destroy();
-            const labels = dailyData.map(d => d.date);
-            const counts = dailyData.map(d => d.count);
             lineChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels.length > 0 ? labels : ['No data yet'],
+                    labels: dailyData.length > 0 ? dailyData.map(d => d.date) : ['No data'],
                     datasets: [{
                         label: 'Scans',
-                        data: counts.length > 0 ? counts : [0],
-                        borderColor: '#63b3ed',
-                        backgroundColor: 'rgba(99,179,237,0.1)',
+                        data: dailyData.length > 0 ? dailyData.map(d => d.count) : [0],
+                        borderColor: '#4f9cf9',
+                        backgroundColor: 'rgba(79,156,249,0.08)',
                         borderWidth: 2,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#63b3ed'
+                        pointBackgroundColor: '#4f9cf9',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
@@ -277,12 +544,12 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: {
-                            ticks: { color: '#718096' },
-                            grid: { color: '#2d3748' }
+                            ticks: { color: '#64748b', font: { size: 11 } },
+                            grid: { color: 'rgba(30,45,69,0.8)' }
                         },
                         y: {
-                            ticks: { color: '#718096', stepSize: 1 },
-                            grid: { color: '#2d3748' },
+                            ticks: { color: '#64748b', stepSize: 1, font: { size: 11 } },
+                            grid: { color: 'rgba(30,45,69,0.8)' },
                             beginAtZero: true
                         }
                     }
@@ -290,23 +557,39 @@
             });
         }
 
+        function getRiskClass(score) {
+            if (score >= 0.7) return 'risk-high';
+            if (score >= 0.4) return 'risk-medium';
+            return 'risk-low';
+        }
+
         function renderLogs(logs) {
             const tbody = document.getElementById('logsBody');
             if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#718096;">No scans yet. Scan a URL first!</td></tr>';
+                tbody.innerHTML = `
+                    <tr><td colspan="5">
+                        <div class="empty-state">
+                            <div>🔍</div>
+                            No scans yet. Go to the scanner and scan a URL!
+                        </div>
+                    </td></tr>`;
                 return;
             }
             tbody.innerHTML = logs.map(log => `
                 <tr>
-                    <td>${log.timestamp}</td>
+                    <td style="color:#64748b; font-size:0.8rem;">${log.timestamp}</td>
                     <td class="url-cell" title="${log.url_scanned}">${log.url_scanned}</td>
                     <td>
                         <span class="badge ${log.prediction === 'Phishing' ? 'badge-phishing' : 'badge-safe'}">
-                            ${log.prediction}
+                            ${log.prediction === 'Phishing' ? '⚠' : '✓'} ${log.prediction}
                         </span>
                     </td>
-                    <td>${(log.risk_score * 100).toFixed(1)}%</td>
-                    <td>${log.user_ip}</td>
+                    <td>
+                        <span class="risk-pill ${getRiskClass(log.risk_score)}">
+                            ${(log.risk_score * 100).toFixed(1)}%
+                        </span>
+                    </td>
+                    <td style="font-family: monospace; font-size: 0.8rem;">${log.user_ip}</td>
                 </tr>
             `).join('');
         }

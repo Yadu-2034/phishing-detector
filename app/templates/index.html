@@ -3,193 +3,558 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phishing URL Detector</title>
+    <title>PhishDetect — URL Security Scanner</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-input: #0d1424;
+            --accent: #4f9cf9;
+            --accent-hover: #3b82f6;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e2d45;
+            --border-hover: #2d4a6e;
+        }
+
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #0f1117;
-            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
+
         header {
-            background: #1a1f2e;
-            border-bottom: 1px solid #2d3748;
-            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
         }
-        header h1 { font-size: 1.25rem; color: #63b3ed; }
-        nav a {
-            color: #a0aec0;
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             text-decoration: none;
-            margin-left: 1.5rem;
-            font-size: 0.9rem;
         }
-        nav a:hover { color: #63b3ed; }
-        .main {
-            flex: 1;
-            max-width: 720px;
-            margin: 4rem auto;
-            padding: 0 1rem;
-            width: 100%;
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f9cf9, #7c3aed);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-        .hero-title {
-            text-align: center;
-            font-size: 2rem;
+
+        .logo-text {
+            font-size: 1.2rem;
             font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        nav a.active {
+            color: var(--accent);
+            background: rgba(79, 156, 249, 0.1);
+        }
+
+        .badge {
+            background: rgba(79, 156, 249, 0.15);
+            color: var(--accent);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 1rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(79, 156, 249, 0.1);
+            border: 1px solid rgba(79, 156, 249, 0.3);
+            color: var(--accent);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .scan-card {
+            width: 100%;
+            max-width: 680px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .scan-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
             margin-bottom: 0.5rem;
         }
-        .hero-subtitle {
-            text-align: center;
-            color: #a0aec0;
-            margin-bottom: 2.5rem;
-            font-size: 0.95rem;
-        }
-        .scan-card {
-            background: #1a1f2e;
-            border: 1px solid #2d3748;
-            border-radius: 12px;
-            padding: 2rem;
-        }
-        .input-group {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-        input[type="text"] {
-            flex: 1;
-            background: #0f1117;
-            border: 1px solid #4a5568;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            outline: none;
-        }
-        input[type="text"]:focus { border-color: #63b3ed; }
-        button {
-            background: #3182ce;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.95rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        button:hover { background: #2c5282; }
-        button:disabled { background: #4a5568; cursor: not-allowed; }
+
         .api-key-row {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
             align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.6rem 1rem;
         }
-        .api-key-row label {
+
+        .api-key-icon {
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        .api-key-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             font-size: 0.85rem;
-            color: #a0aec0;
+            outline: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .scan-input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .url-input-wrap {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .url-input-wrap:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 156, 249, 0.1);
+        }
+
+        .url-input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            padding: 0.85rem 0;
+        }
+
+        .url-input-wrap input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .scan-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0 1.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .result-box {
-            margin-top: 1.5rem;
-            padding: 1.25rem;
-            border-radius: 8px;
+
+        .scan-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .scan-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
             display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
-        .result-phishing {
-            background: rgba(245, 101, 101, 0.1);
-            border: 1px solid #fc8181;
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
-        .result-safe {
-            background: rgba(72, 187, 120, 0.1);
-            border: 1px solid #68d391;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        .result-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .risk-bar-container {
-            background: #2d3748;
-            border-radius: 999px;
-            height: 8px;
-            margin: 0.75rem 0;
-            overflow: hidden;
-        }
-        .risk-bar {
-            height: 100%;
-            border-radius: 999px;
-            transition: width 0.5s ease;
-        }
-        .risk-high { background: #fc8181; }
-        .risk-low  { background: #68d391; }
-        .result-meta {
-            font-size: 0.85rem;
-            color: #a0aec0;
+
+        .result-box {
+            display: none;
+            border-radius: 12px;
+            padding: 1.5rem;
             margin-top: 0.5rem;
         }
-        .loading {
-            text-align: center;
-            color: #a0aec0;
-            padding: 1rem;
-            display: none;
+
+        .result-phishing {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
-        .tip {
-            margin-top: 1.5rem;
+
+        .result-safe {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .result-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .result-badge-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .phishing-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .safe-icon {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .risk-score-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 999px;
+        }
+
+        .risk-high { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .risk-medium { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .risk-low { background: rgba(34,197,94,0.15); color: var(--success); }
+
+        .risk-bar-wrap {
+            margin: 0.75rem 0;
+        }
+
+        .risk-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .risk-bar-track {
+            height: 8px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fill-danger { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+        .fill-success { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
+        .result-url {
             font-size: 0.8rem;
-            color: #718096;
+            color: var(--text-muted);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin-top: 0.5rem;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+
+        .result-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1.5rem 0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .feature-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .try-text {
             text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .try-text code {
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>PhishDetect</h1>
+        <a class="logo" href="/">
+            <div class="logo-icon">🛡</div>
+            <span class="logo-text">Phish<span>Detect</span></span>
+        </a>
         <nav>
-            <a href="/">Scan</a>
+            <a href="/" class="active">Scanner</a>
             <a href="/dashboard">Dashboard</a>
-            <a href="/docs">API Docs</a>
+            <a href="/docs">API Docs <span class="badge">Swagger</span></a>
         </nav>
     </header>
 
-    <main class="main">
-        <h2 class="hero-title">URL Phishing Detector</h2>
-        <p class="hero-subtitle">ML-powered security analysis with DevSecOps deployment</p>
+    <main>
+        <div class="hero">
+            <div class="hero-badge">🔒 ML-Powered Security</div>
+            <h1>Detect Phishing URLs Instantly</h1>
+            <p>Advanced machine learning model analyzes URLs in real-time to protect you from phishing attacks, scams, and malicious websites.</p>
+        </div>
 
         <div class="scan-card">
+            <div class="scan-label">API Authentication</div>
             <div class="api-key-row">
-                <label>API Key:</label>
-                <input type="text" id="apiKey"
-                       value="phishdetect-api-key-demo-2024">
+                <span class="api-key-icon">🔑</span>
+                <input type="text" id="apiKey" value="phishdetect-api-key-demo-2024" spellcheck="false">
             </div>
 
-            <div class="input-group">
-                <input type="text" id="urlInput"
-                       placeholder="Enter URL to scan: https://example.com">
-                <button onclick="scanUrl()" id="scanBtn">Scan URL</button>
+            <div class="scan-label">URL to Scan</div>
+            <div class="scan-input-group">
+                <div class="url-input-wrap">
+                    <input type="text" id="urlInput"
+                           placeholder="https://example.com or paste any suspicious URL...">
+                </div>
+                <button class="scan-btn" onclick="scanUrl()" id="scanBtn">
+                    Scan
+                </button>
             </div>
 
-            <div class="loading" id="loading">Analyzing URL...</div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                Analyzing URL with ML model...
+            </div>
 
             <div class="result-box" id="resultBox">
-                <div class="result-title" id="resultTitle"></div>
-                <div class="risk-bar-container">
-                    <div class="risk-bar" id="riskBar"></div>
+                <div class="result-header">
+                    <div class="result-badge">
+                        <div class="result-badge-icon" id="resultIcon"></div>
+                        <span id="resultTitle"></span>
+                    </div>
+                    <span class="risk-score-badge" id="riskBadge"></span>
                 </div>
-                <div class="result-meta" id="resultMeta"></div>
-                <div id="resultMessage" style="margin-top:0.5rem; font-size:0.9rem;"></div>
+
+                <div class="risk-bar-wrap">
+                    <div class="risk-bar-labels">
+                        <span>Safe</span>
+                        <span>Risk Level</span>
+                        <span>Phishing</span>
+                    </div>
+                    <div class="risk-bar-track">
+                        <div class="risk-bar-fill" id="riskBar"></div>
+                    </div>
+                </div>
+
+                <div class="result-message" id="resultMessage"></div>
+                <div class="result-url" id="resultUrl"></div>
             </div>
 
-            <p class="tip">
-                Try scanning: http://paypal-secure-login.verify-account.com/update
-            </p>
+            <div class="divider"></div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    Random Forest ML
+                </div>
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    15 URL features
+                </div>
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    Real-time analysis
+                </div>
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    JWT Auth
+                </div>
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    Rate limiting
+                </div>
+                <div class="feature">
+                    <div class="feature-dot"></div>
+                    SIEM logging
+                </div>
+            </div>
+
+            <div class="try-text">
+                Try: <code>http://paypal-secure-login.verify-account.com/update</code>
+            </div>
         </div>
     </main>
+
+    <footer>
+        Built with FastAPI · scikit-learn · Docker · GitHub Actions · DevSecOps
+    </footer>
 
     <script>
         async function scanUrl() {
@@ -201,9 +566,10 @@
                 return;
             }
 
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').style.display = 'flex';
             document.getElementById('resultBox').style.display = 'none';
             document.getElementById('scanBtn').disabled = true;
+            document.getElementById('scanBtn').textContent = 'Scanning...';
 
             try {
                 const response = await fetch('/scan-url', {
@@ -212,7 +578,7 @@
                         'Content-Type': 'application/json',
                         'X-Api-Key': apiKey
                     },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify({ url })
                 });
 
                 if (!response.ok) {
@@ -229,34 +595,41 @@
             } finally {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('scanBtn').disabled = false;
+                document.getElementById('scanBtn').textContent = 'Scan';
             }
         }
 
         function showResult(data) {
             const box = document.getElementById('resultBox');
             const isPhishing = data.result === 'Phishing';
+            const riskPct = Math.round(data.risk_score * 100);
 
             box.className = 'result-box ' + (isPhishing ? 'result-phishing' : 'result-safe');
             box.style.display = 'block';
 
-            document.getElementById('resultTitle').textContent =
-                isPhishing ? 'PHISHING DETECTED' : 'URL IS SAFE';
+            document.getElementById('resultIcon').className =
+                'result-badge-icon ' + (isPhishing ? 'phishing-icon' : 'safe-icon');
+            document.getElementById('resultIcon').textContent = isPhishing ? '⚠' : '✓';
 
-            const riskPct = Math.round(data.risk_score * 100);
+            document.getElementById('resultTitle').textContent =
+                isPhishing ? 'Phishing Detected' : 'URL is Safe';
+
             const riskBar = document.getElementById('riskBar');
             riskBar.style.width = riskPct + '%';
-            riskBar.className = 'risk-bar ' + (isPhishing ? 'risk-high' : 'risk-low');
+            riskBar.className = 'risk-bar-fill ' + (isPhishing ? 'fill-danger' : 'fill-success');
 
-            document.getElementById('resultMeta').textContent =
-                'Risk Score: ' + riskPct + '% | URL: ' + data.url;
+            const riskBadge = document.getElementById('riskBadge');
+            riskBadge.textContent = 'Risk: ' + riskPct + '%';
+            if (riskPct >= 70) riskBadge.className = 'risk-score-badge risk-high';
+            else if (riskPct >= 40) riskBadge.className = 'risk-score-badge risk-medium';
+            else riskBadge.className = 'risk-score-badge risk-low';
 
             document.getElementById('resultMessage').textContent = data.message;
+            document.getElementById('resultUrl').textContent = data.url;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('urlInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') scanUrl();
-            });
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') scanUrl();
         });
     </script>
 </body>
