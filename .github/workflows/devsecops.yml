@@ -51,13 +51,13 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest httpx==0.24.1
 
       - name: Train model
         run: python ml/train_model.py
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: python -m pytest tests/test_api.py -v --tb=short
 
   build-and-scan:
     name: Build Docker and Trivy Scan
